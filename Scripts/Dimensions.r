@@ -9,7 +9,7 @@ library(fasterize); library(ggplot2);
 
 # load general files
 source(here::here("Scripts", "gen_funs.r"))
-ga <- raster(here::here("ProducedData", "WGS_gridArea_halfdegree.tif"))
+ga <- WGS84_areaRaster(0.5)
 twst_i <- raster(here::here("ProducedData", "TWS_MAP_sclaer_p10p90_1985_2014map.tif"))
 Mask <- raster(here::here("ProducedData", "GlobalMask.tif"))
 
@@ -58,28 +58,26 @@ Cal_ind <- Cal.pctl*twst_i
 plot(Cal_ind)
 
 #3. economic dimension
-GDP.r <- raster(here::here("Data", "Dimensions", "GDP_2015_0d5.tif"))
-GDP.r[GDP.r < 1] <- NA
-Wat_withd <- raster(here::here("Data", "Dimensions", "TotalWithdrawls_2010.tif"))
-Wat_withd[is.na(GDP.r)] <- NA
-GDP_wat_int <- Wat_withd/(GDP.r)
-GDP.pctl <- RasterAreaPercentiles(RasterToClassify = GDP_wat_int,
-                                  WeightRaster = ga, 
-                                  MaskRaster =  Mask, 
-                                  clipToExtent =  "clip")
+EconSect_withd <- raster(here::here("Data", "Dimensions", "EconSectors_2010Withdrawals_sum.tif"))
+EconSect_withd[EconSect_withd == 0] <- NA
+Econ.pctl <- RasterAreaPercentiles(RasterToClassify = EconSect_withd,
+                                   WeightRaster = ga, 
+                                   MaskRaster =  Mask, 
+                                   clipToExtent =  "clip")
 
 # plot global distribution
-tmp <- cbind(GDP.pctl[], ga[], Mask[], GDP_wat_int[]) %>% as.data.frame() %>% set_colnames(c("a", "b", "c", "d"))
+tmp <- cbind(Econ.pctl[], ga[], Mask[], EconSect_withd[]) %>% as.data.frame() %>% 
+  set_colnames(c("a", "b", "c", "d"))
 sm <- tmp[complete.cases(tmp$d),]
 sm <- sm %>% filter(c == 1) %>% group_by(a) %>% summarize(area = sum(b, na.rm = T)) %>% as.data.frame()
 sm$sum <- (cumsum(sm$area)/sum(sm$area,na.rm = T)) %>% round(digits = 2)
 plot(sm$sum  ~ sm$a); sm
-GDP.pctl[is.na(GDP.pctl[]) & Mask[] == 1] <- 0
-plot(GDP.pctl)
+Econ.pctl[is.na(Econ.pctl[]) & Mask[] == 1] <- 0
+plot(Econ.pctl)
 
 # create economic indicator
-GDP_ind <- GDP.pctl*twst_i
-plot(GDP_ind)
+Econ_ind <- Econ.pctl*twst_i
+plot(Econ_ind)
 
 #4. Ecological dimension
 ## Sensitivity (vegetation to soil moisture and Eflos to GW head decline)
@@ -118,7 +116,7 @@ EFN.pctl[Mask[] != 1] <- NA
 # plot global distribution
 tmp <- cbind(EFN.pctl[], ga[], Mask[], EFs[]) %>% as.data.frame() %>% set_colnames(c("a", "b", "c", "d"))
 sm <- tmp[complete.cases(tmp$d),]
-sm <- sm %>% filter(c == 1 & a >= 0.01) %>% group_by(a) %>% summarize(area = sum(b, na.rm = T)) %>% as.data.frame()
+sm <- sm %>% filter(c == 1) %>% group_by(a) %>% summarize(area = sum(b, na.rm = T)) %>% as.data.frame()
 sm$sum <- (cumsum(sm$area)/sum(sm$area,na.rm = T)) %>% round(digits = 4)
 plot(sm$sum  ~ sm$a); sm
 plot(EFN.pctl)
@@ -129,14 +127,15 @@ Sens.ind <- calc(Sens.stack, fun = mean, na.rm = T)
 plot(Sens.ind)
 
 # Sens.ind[Sens.ind < 0.0025] <- NA
-
+Sens.ind[1,] <- NA; Sens.ind[,1] <- NA
+Sens.ind[is.nan(Sens.ind) | Sens.ind == 0] <- NA
 Sens.ind.pctl <- RasterAreaPercentiles(RasterToClassify = Sens.ind,
-                                  WeightRaster = ga, 
-                                  MaskRaster =  Mask, 
-                                  clipToExtent =  "clip")
+                                       WeightRaster = ga, 
+                                       MaskRaster =  Mask, 
+                                       clipToExtent =  "clip")
 
 # plot global distribution
-tmp <- cbind(Sens.ind[], ga[], Mask[], Sens.ind[]) %>% as.data.frame() %>% set_colnames(c("a", "b", "c", "d"))
+tmp <- cbind(Sens.ind.pctl[], ga[], Mask[], Sens.ind[]) %>% as.data.frame() %>% set_colnames(c("a", "b", "c", "d"))
 sm <- tmp[complete.cases(tmp$d),]
 sm <- sm %>% filter(c == 1) %>% group_by(a) %>% summarize(area = sum(b, na.rm = T)) %>% as.data.frame()
 sm$sum <- (cumsum(sm$area)/sum(sm$area,na.rm = T)) %>% round(digits = 2)
@@ -153,8 +152,8 @@ Eco_ind <- Sens.ind.pctl*twst_i
 plot(Eco_ind)
 
 # write all rasters
-write.stack = stack(pop_ind, Cal_ind, GDP_ind, Eco_ind)
-names(write.stack) <- c("Pop", "Cal", "GDP", "Eco_sens")
+write.stack = stack(pop_ind, Cal_ind, Econ_ind, Eco_ind)
+names(write.stack) <- c("Pop", "Cal", "Econ", "Eco_sens")
 for (i in 1:length(write.stack)) {
   writeRaster(write.stack[[i]], 
               filename = paste(here::here("ProducedData", "IndividualDims"),
@@ -169,12 +168,12 @@ for (i in 1:length(write.stack)) {
 twst_i <- tmap_clipproj(twst_i)
 pop.pctl <- tmap_clipproj(pop.pctl)
 Cal.pctl <- tmap_clipproj(Cal.pctl)
-GDP.pctl <- tmap_clipproj(GDP.pctl)
+Econ.pctl <- tmap_clipproj(Econ.pctl)
 Sens.ind.pctl <- tmap_clipproj(Sens.ind.pctl)
 
 GDP.r <- tmap_clipproj(GDP.r)
 Wat_withd <- tmap_clipproj(Wat_withd)
-GDP_wat_int <- tmap_clipproj(GDP_wat_int)
+EconWithd <- tmap_clipproj(EconSect_withd)
 VSI_sm <- tmap_clipproj(VSI_sm)
 VSI.pctl <- tmap_clipproj(VSI.pctl)
 EFs <- tmap_clipproj(EFs)
@@ -191,9 +190,9 @@ lakes <- sf::read_sf(here::here("Data", "NE_lakes", "ne_10m_lakes.shp"))
 lakes$scalerank %<>% as.numeric()
 lakes.l <- subset(lakes, scalerank < 2)
 
-plot <- tm_shape(Mean.p, projection = "+proj=robin") +
+plot <- tm_shape(log10(EconWithd), projection = "+proj=robin") +
   # tm_raster(style = "cont", palette = plt, midpoint = 0, breaks = c(-1, 1)) +
-  tm_raster(style = "cont", palette = plt1, breaks = c(0, 1)) +
+  tm_raster(style = "cont", palette = plt1, breaks = c(0, 2)) +
   tm_shape(World) + tm_borders(lwd = 0.7) +
   tm_shape(lakes.l) + tm_polygons(col = "white", border.col = "grey50", lwd = 0.8) +
   tm_layout(legend.show = F, earth.boundary = c(-179, -60, 179, 88),
@@ -202,7 +201,7 @@ plot <- tm_shape(Mean.p, projection = "+proj=robin") +
             outer.margins = c(-0, -0.09, -0, -0.04)) # B, L, T, R
 plot
 
-tmap::tmap_save(plot, here::here("Figures", "SI_figures", "Sens_mean.svg"), 
+tmap::tmap_save(plot, here::here("Figures", "SI_figures", "EconWithd_log10.svg"), 
                 units = "in", dpi = 500) 
 
 ## plot sm lines (throughaway code for SI figures)
@@ -216,5 +215,32 @@ ggplot(data = sm, aes(x = a, y = sum, color = a)) +
   ylab("Cumulative area (%)")
 
 
-ggsave(plot = last_plot(), here::here("Figures", "SI_figures", "Eco_curveline.eps"),
+ggsave(plot = last_plot(), here::here("Figures", "SI_figures", "Ecol_curveline.eps"),
        dpi = 500, width = 6, height = 4, units = "in")
+
+
+
+############### Below is archived, former economic dimension approach
+#3.alt economic dimension
+# GDP.r <- raster(here::here("Data", "Dimensions", "GDP_2015_0d5.tif"))
+# GDP.r[GDP.r < 1] <- NA
+# Wat_withd <- raster(here::here("Data", "Dimensions", "TotalWithdrawls_2010.tif"))
+# Wat_withd[is.na(GDP.r)] <- NA
+# GDP_wat_int <- Wat_withd/(GDP.r)
+# GDP.pctl <- RasterAreaPercentiles(RasterToClassify = GDP_wat_int,
+#                                   WeightRaster = ga, 
+#                                   MaskRaster =  Mask, 
+#                                   clipToExtent =  "clip")
+# 
+# # plot global distribution
+# tmp <- cbind(GDP.pctl[], ga[], Mask[], GDP_wat_int[]) %>% as.data.frame() %>% set_colnames(c("a", "b", "c", "d"))
+# sm <- tmp[complete.cases(tmp$d),]
+# sm <- sm %>% filter(c == 1) %>% group_by(a) %>% summarize(area = sum(b, na.rm = T)) %>% as.data.frame()
+# sm$sum <- (cumsum(sm$area)/sum(sm$area,na.rm = T)) %>% round(digits = 2)
+# plot(sm$sum  ~ sm$a); sm
+# GDP.pctl[is.na(GDP.pctl[]) & Mask[] == 1] <- 0
+# plot(GDP.pctl)
+# 
+# # create economic indicator
+# GDP_ind <- GDP.pctl*twst_i
+# plot(GDP_ind)

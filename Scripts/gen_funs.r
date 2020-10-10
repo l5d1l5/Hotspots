@@ -194,3 +194,56 @@ hotspot_id_smoother <- function(RawRaster, WeightRaster, MaskRaster, Method, Mul
   
   return(Smooth.2)
 }
+
+################## 5 - GWS84 grid area raster creater 
+WGS84_areaRaster <- function(ResT) {
+  library(tidyverse)
+  require(raster)
+  
+  pi.g <- 3.14159265358979  
+  Fl <- 0.0033528106811823171 # flattening
+  SMA <- 6378137.0 # semi major axis
+  e <- sqrt((2*Fl) - (Fl^2)) # eccentricity  
+  RES <- ResT
+  
+  # error check entry
+  if ((90/RES) %% 1 > 1e-6) { stop("'ResT' must a factor of 90") }
+  if (90/RES > (90/(1/24))) { stop("'ResT' is too fine (will require more memory than can be allocated") }
+  
+  # initialize dataframe with geodetic latitudes
+  df.a <- data.frame(LowLAT = seq(-90, 90-RES, by = RES), 
+                     UppLAT = seq(-90+RES, 90, by = RES))
+  
+  # Convert geodetic latitudes degrees to radians
+  df.a$LowLATrad <- df.a$LowLAT * pi.g / 180
+  df.a$UppLATrad <- df.a$UppLAT * pi.g / 180
+  
+  # Calculate q1 and q2
+  df.a$q1 <- (1-e*e)* ((sin(df.a$LowLATrad)/(1-e*e*sin(df.a$LowLATrad)^2)) - ((1/(2*e))*log((1-e*sin(df.a$LowLATrad))/(1+e*sin(df.a$LowLATrad)))))
+  df.a$q2 <- (1-e*e)* ((sin(df.a$UppLATrad)/(1-e*e*sin(df.a$UppLATrad)^2)) - ((1/(2*e))*log((1-e*sin(df.a$UppLATrad))/(1+e*sin(df.a$UppLATrad)))))
+  
+  # calculate q constant
+  q.const <- (1-e*e)* ((sin(pi.g/2)/(1-e*e*sin(pi.g/2)^2)) - ((1/(2*e))*log((1-e*sin(pi.g/2))/(1+e*sin(pi.g/2)))))
+  
+  # Calculate authaltic latitudes
+  df.a$phi1 <- asin(df.a$q1 / q.const)
+  df.a$phi2 <- asin(df.a$q2 / q.const)
+  
+  # Calculate authaltic radius
+  R.adius <- sqrt(SMA*SMA*q.const/2)
+  
+  # Calculate cell size in radians
+  CS <- (RES) * pi.g/180
+  
+  # Calculate cell area in m2
+  df.a$area_m2 <- R.adius*R.adius*CS*(sin(df.a$phi2)-sin(df.a$phi1))
+  
+  # Convert to raster, and replicate column throughout global longitude domain
+  WGS84area_km2 <- matrix(df.a$area_m2/1e6, nrow = 180/RES, ncol = 360/RES, 
+                          byrow = FALSE, dimnames = NULL) %>% raster()
+  extent(WGS84area_km2) <- c(-180, 180, -90, 90) # set extent of raster
+  crs(WGS84area_km2) <- crs("+proj=longlat") # set CRS of raster
+  WGS84area_km2 <- raster::flip(WGS84area_km2, direction = "y") # flip raster (inconsequential, but technically correct)
+  message(paste0("Calculated global surface area at: ", RES, "deg. is ", sum(WGS84area_km2[]), " km2.", sep = ""))
+  return(WGS84area_km2)
+}

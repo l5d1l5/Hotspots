@@ -10,9 +10,9 @@ source(here::here("Scripts", "gen_funs.r"))
 # Import each of the dimensions
 Pop <- raster(here::here("ProducedData", "IndividualDims", "Pop_indicator.tif"))
 Cal <- raster(here::here("ProducedData", "IndividualDims", "Cal_indicator.tif"))
-GDP <- raster(here::here("ProducedData", "IndividualDims", "GDP_indicator.tif"))
+Econ <- raster(here::here("ProducedData", "IndividualDims", "Econ_indicator.tif"))
 Eco <- raster(here::here("ProducedData", "IndividualDims", "Eco_sens_indicator.tif"))
-ga <- raster(here::here("ProducedData", "WGS_gridArea_halfdegree.tif"))
+ga <- WGS84_areaRaster(0.5)
 Mask <- raster(here::here("ProducedData", "GlobalMask.tif"))
 
 # Establish AHP preferences, where 1 = Ecology, 2 = population, 3 = ag, 4 = econ.
@@ -32,7 +32,9 @@ Pop.w <- BdayCake.weights$priority[2]
 Ag.w <- BdayCake.weights$priority[3]
 Econ.w <- BdayCake.weights$priority[4]
 
-OverallComposite <- Eco.w*Eco + Pop.w*Pop + Ag.w*Cal + Econ.w*GDP 
+OverallComposite <- Eco.w*Eco + Pop.w*Pop + Ag.w*Cal + Econ.w*Econ
+writeRaster(OverallComposite, here::here("Scripts", "Shiny", "DefaultComposite.tif"),
+            format = "GTiff", overwrite = T)
 
 Hotspots_all <- hotspot_id_smoother(RawRaster = OverallComposite,
                                     WeightRaster = ga,
@@ -49,7 +51,7 @@ Hotspots_ag <- hotspot_id_smoother(RawRaster = Cal,
                                    MaskRaster = Mask,
                                    Method = "SD",
                                    Multiplier = 2)
-Hotspots_Econ <- hotspot_id_smoother(RawRaster = GDP,
+Hotspots_Econ <- hotspot_id_smoother(RawRaster = Econ,
                                      WeightRaster = ga,
                                      MaskRaster = Mask,
                                      Method = "SD",
@@ -74,6 +76,9 @@ Hotspots_Ecol[Hotspots_Ecol == 0] <- NA
 Hotspots_nonSubstitutable[Hotspots_nonSubstitutable == 0] <- NA
 
 Hotspots_all.sf <- rasterToPolygons(Hotspots_all, dissolve = T)
+Hotspots_all.sf.w <- st_as_sf(Hotspots_all.sf)
+sf::write_sf(Hotspots_all.sf.w, here::here("Scripts", "Shiny", "DefaultHotspots.shp"),
+             driver = "ESRI Shapefile", overwrite = T)
 Hotspots_all_ns.sf <- rasterToPolygons(Hotspots_nonSubstitutable, dissolve = T)
 Hotspots_pop.sf <- rasterToPolygons(Hotspots_pop, dissolve = T)
 Hotspots_ag.sf <- rasterToPolygons(Hotspots_ag, dissolve = T)
@@ -89,13 +94,13 @@ plt = pals::ocean.balance(20)[3:18] %>% rev()
 
 Pop[Mask != 1] <- NA
 Cal[Mask != 1] <- NA
-GDP[Mask != 1] <- NA
+Econ[Mask != 1] <- NA
 Eco[Mask != 1] <- NA
 
 # crop and reproject all for plotting
 Pop.rpj <- tmap_clipproj(Pop)
 Cal.rpj <- tmap_clipproj(Cal)
-GDP.rpj <- tmap_clipproj(GDP)
+Econ.rpj <- tmap_clipproj(Econ)
 Eco.rpj <- tmap_clipproj(Eco)
 Overall.rpj <- tmap_clipproj(OverallComposite)
 
@@ -124,7 +129,7 @@ plot_cal <- tm_shape(Cal.rpj, projection = "+proj=robin") +
 plot_cal
 
 ##### - ECONOMIC DIMENSION
-plot_gdp <- tm_shape(GDP.rpj, projection = "+proj=robin") +
+plot_econ <- tm_shape(Econ.rpj, projection = "+proj=robin") +
   tm_raster(style = "cont", palette = plt, midpoint = 0, breaks = c(-1, 1)) +
   tm_shape(World) + tm_borders(lwd = 0.7) +
   tm_shape(lakes.l) + tm_polygons(col = "white", border.col = "grey50", lwd = 0.8) +
@@ -133,7 +138,7 @@ plot_gdp <- tm_shape(GDP.rpj, projection = "+proj=robin") +
             earth.boundary.color = "white", space.color = "white",
             legend.frame = F, frame = F,
             outer.margins = c(-0, -0.09, -0, -0.04)) # B, L, T, R
-plot_gdp
+plot_econ
 
 ##### - ECOLOGICAL DIMENSION
 plot_ecol <- tm_shape(Eco.rpj, projection = "+proj=robin") +
@@ -166,51 +171,55 @@ tmap::tmap_save(plot_pop, here::here("Figures", "Hotspot_maps", "Pop_hotspots.sv
                 units = "in", dpi = 500) 
 tmap_save(plot_cal, here::here("Figures", "Hotspot_maps", "Cal_hotspots.svg"), 
           units = "in", dpi = 500) 
-tmap_save(plot_gdp, here::here("Figures", "Hotspot_maps", "GDP_hotspots.svg"), 
+tmap_save(plot_econ, here::here("Figures", "Hotspot_maps", "Econ_hotspots.svg"), 
           units = "in", dpi = 500) 
 tmap_save(plot_ecol, here::here("Figures", "Hotspot_maps", "Ecol_hotspots.svg"), 
           units = "in", dpi = 500) 
-tmap_save(plot_all, here::here("Figures", "Hotspot_maps", "Composite_hotspots_sdgs.svg"), 
+tmap_save(plot_all, here::here("Figures", "Hotspot_maps", "Composite_hotspots.svg"), 
           units = "in", dpi = 500) 
 
 ##################################################
 ####### Calculate statistics in hotspots #########
 ##################################################
-Hotspots_all
+# Hotspots_all
+# Hotspots_pop
 Pop.r <- raster(here::here("Data", "Dimensions", 
                            "gpw_v4_population_count_adjusted_to_2015_unwpp_country_totals_rev11_2015_30_min.tif"))
-Pop.r[is.na(Hotspots_all)] <- NA
+Pop.r[is.na(Hotspots_all) | twst_i > 0] <- NA # toggle between hotspots_all and hotspots_pop for estimates
 sum(Pop.r[], na.rm = T)/1e9
 
+# Hotspots_ag
 Cal.r <- raster(here::here("Data", "Dimensions", "kcal_0d5.tif"))
-Cal.r[is.na(Hotspots_all)] <- NA
+Cal.r[is.na(Hotspots_all) | twst_i < 0] <- NA # toggle between hotspots_all and hotspots_ag for estimates
 sum(Cal.r[], na.rm = T)/1e12
 
+# Hotspots_Econ
 GDP.r <- raster(here::here("Data", "Dimensions", "GDP_2015_0d5.tif"))
-GDP.r[is.na(Hotspots_all)] <- NA
+GDP.r[is.na(Hotspots_all) | twst_i < 0] <- NA # toggle between hotspots_all and hotspots_econ for estimates
 sum(GDP.r[], na.rm = T)/1e12
 
+# Hotspots_Ecol
 Eco.r <- raster(here::here("ProducedData", "EcologicalSensitivity_Indicator.tif"))
-ga <- raster(here::here("ProducedData", "WGS_gridArea_halfdegree.tif"))
-ga[is.na(Hotspots_all) | Eco.r < 0.9] <- NA
+ga <- WGS84_areaRaster(0.5)
+ga[is.na(Hotspots_all) | Eco.r < 0.9 | twst_i > 0] <- NA # toggle between hotspots_all and hotspots_ecol for estimates
 ga[Eco.r < 0.9 | Mask != 1] <- NA
 sum(ga[], na.rm = T)/1e6
 
-ga <- raster(here::here("ProducedData", "WGS_gridArea_halfdegree.tif"))
+# three blocks below calculate percent of hotspots in drying conditions
+ga <- WGS84_areaRaster(0.5)
 ga[is.na(Hotspots_all) | Mask != 1] <- NA
 ga[Mask != 1] <- NA
 sum(ga[], na.rm = T)/1e6
 
 twst_i <- raster(here::here("ProducedData", "TWS_MAP_sclaer_p10p90_1985_2014map.tif"))
-ga <- raster(here::here("ProducedData", "WGS_gridArea_halfdegree.tif"))
+ga <- WGS84_areaRaster(0.5)
 ga[is.na(Hotspots_all) | twst_i >= 0] <- NA 
 a = sum(ga[], na.rm = T)
 
-ga <- raster(here::here("ProducedData", "WGS_gridArea_halfdegree.tif"))
+ga <- WGS84_areaRaster(0.5)
 ga[is.na(Hotspots_all)] <- NA
 b = sum(ga[], na.rm = T)
 a/b
-
 
 ###################################################
 ####### Calculate countries per dimension #########
@@ -238,6 +247,15 @@ trend.df <- cbind(twst_i[], Hotspots_pop[], Hotspots_ag[],
                   Hotspots_Econ[], Hotspots_Ecol[], ga[]) %>%
   as.data.frame() %>%
   set_colnames(c("trend", "POP", "AG", "ECON", "ECOL", "AREA"))
+
+trend.df %>% filter(POP == 1 & trend < 0) %>% pull(AREA) %>% sum(na.rm = T) /
+  trend.df %>% filter(POP == 1) %>% pull(AREA) %>% sum(na.rm = T)
+
+trend.df %>% filter(AG == 1 & trend < 0) %>% pull(AREA) %>% sum(na.rm = T) /
+  trend.df %>% filter(AG == 1) %>% pull(AREA) %>% sum(na.rm = T)
+
+trend.df %>% filter(ECON == 1 & trend < 0) %>% pull(AREA) %>% sum(na.rm = T) /
+  trend.df %>% filter(ECON == 1) %>% pull(AREA) %>% sum(na.rm = T)
 
 trend.df %>% filter(ECOL == 1 & trend < 0) %>% pull(AREA) %>% sum(na.rm = T) /
   trend.df %>% filter(ECOL == 1) %>% pull(AREA) %>% sum(na.rm = T)
