@@ -1,5 +1,4 @@
-# SustainabilityHotspots
-Code repo for the manuscript: "Sustainability hotspots of changing global freshwater availability"
+Code repo for the manuscript: "Sustainability hotspots of changing global freshwater availability" (Huggins et al., in review).
 
 **In Preprocessing folder:** <br>
 *(Required to be executed before the core scripts)* <br>
