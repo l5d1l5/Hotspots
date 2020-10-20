@@ -10,7 +10,7 @@ Code repo for the manuscript: "Sustainability hotspots of changing global freshw
 `GriddedWithdrawals_EconomicSectors_2010.r` sums water withdrawals for electricity generation, manufaturing, livestock, and mining for the year 2010 from Huang et al. (2018). <br>
 `Mask_derive.r` creates mask that excludes Antarctica, oceans, and regions of earthquake interference. <br>
 <br>
-**Core scripts:** <br>
+**In main folder (core scripts):** <br>
 `gen_funs.r` creates custom geospatial functions to be used in `Hotspots.r` and `Dimensions.r` <br>
 These include: <br>
     `RasterAreaPercentiles` converts a distributed grid into area-weighted percentiles, with masking optional. <br>
@@ -23,5 +23,5 @@ These include: <br>
 `DimHistograms.r` plots histograms of population count, crop calories, GDP at PPP, and water sensitive environment surface area agaist the relative water availability treds. <br>
 `Hotspots.r` derives the inidivudal and overall sustainability hotspots based on analytical hierarchy process-derived weightings. <br>
 <br>
-**Shiny:** <br>
+**In Shiny folder:** <br>
 `app.r` base script used to control Shiny Web App currently hosted on https://waterhotspots.weebly.com/. <br>
