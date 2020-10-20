@@ -19,7 +19,6 @@ These include: <br>
     `hotspot_id_smoother` post-processes sustainability hotspots using two filters. <br>
     `WGS84_areaRaster` returns a raster with grid cell values representing WGS84 grid cell areas (up to 2.5 minute resolution). <br>
 <br>
-
 `Dimensions.r` derives the population, agricultural, economic, and environmental presence indicators, and multiplies each by the trend severity indicator to derive each dimension's hotspot indicator. <br>
 `DimHistograms.r` plots histograms of population count, crop calories, GDP at PPP, and water sensitive environment surface area agaist the relative water availability treds. <br>
 `Hotspots.r` derives the inidivudal and overall sustainability hotspots based on analytical hierarchy process-derived weightings. <br>
