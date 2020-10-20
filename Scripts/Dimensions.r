@@ -217,30 +217,3 @@ ggplot(data = sm, aes(x = a, y = sum, color = a)) +
 
 ggsave(plot = last_plot(), here::here("Figures", "SI_figures", "Ecol_curveline.eps"),
        dpi = 500, width = 6, height = 4, units = "in")
-
-
-
-############### Below is archived, former economic dimension approach
-#3.alt economic dimension
-# GDP.r <- raster(here::here("Data", "Dimensions", "GDP_2015_0d5.tif"))
-# GDP.r[GDP.r < 1] <- NA
-# Wat_withd <- raster(here::here("Data", "Dimensions", "TotalWithdrawls_2010.tif"))
-# Wat_withd[is.na(GDP.r)] <- NA
-# GDP_wat_int <- Wat_withd/(GDP.r)
-# GDP.pctl <- RasterAreaPercentiles(RasterToClassify = GDP_wat_int,
-#                                   WeightRaster = ga, 
-#                                   MaskRaster =  Mask, 
-#                                   clipToExtent =  "clip")
-# 
-# # plot global distribution
-# tmp <- cbind(GDP.pctl[], ga[], Mask[], GDP_wat_int[]) %>% as.data.frame() %>% set_colnames(c("a", "b", "c", "d"))
-# sm <- tmp[complete.cases(tmp$d),]
-# sm <- sm %>% filter(c == 1) %>% group_by(a) %>% summarize(area = sum(b, na.rm = T)) %>% as.data.frame()
-# sm$sum <- (cumsum(sm$area)/sum(sm$area,na.rm = T)) %>% round(digits = 2)
-# plot(sm$sum  ~ sm$a); sm
-# GDP.pctl[is.na(GDP.pctl[]) & Mask[] == 1] <- 0
-# plot(GDP.pctl)
-# 
-# # create economic indicator
-# GDP_ind <- GDP.pctl*twst_i
-# plot(GDP_ind)

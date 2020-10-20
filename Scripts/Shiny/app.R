@@ -115,7 +115,7 @@ hotspot_id_smoother <- function(RawRaster, WeightRaster, MaskRaster, Method, Mul
                                             probs = 0.75, na.rm = T) -
       spatstat::weighted.quantile(x = df.temp$Value, w = df.temp$Area,
                                   probs = 0.25, na.rm = T)
-    calc.IQR < abs(calc.IQR)
+    calc.IQR <- abs(calc.IQR)
     
     Int.ras <- RawRaster/(calc.IQR*Multiplier)
     ID.ras[abs(Int.ras[]) >= 1] <- 1
@@ -126,7 +126,7 @@ hotspot_id_smoother <- function(RawRaster, WeightRaster, MaskRaster, Method, Mul
                                             probs = 0.9, na.rm = T) -
       spatstat::weighted.quantile(x = df.temp$Value, w = df.temp$Area,
                                   probs = 0.1, na.rm = T)
-    calc.IDR < abs(calc.IDR)
+    calc.IDR <- abs(calc.IDR)
     
     Int.ras <- RawRaster/(calc.IDR*Multiplier)
     ID.ras[abs(Int.ras[]) >= 1] <- 1
