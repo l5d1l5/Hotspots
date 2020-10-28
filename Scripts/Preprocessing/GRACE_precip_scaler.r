@@ -33,7 +33,5 @@ TWSt_MAP_scaler[TWSt_MAP_scaler < -1] <- -1
 TWSt_MAP_scaler[TWSt_MAP_scaler > 1] <- 1
 plot(TWSt_MAP_scaler)
 
-plot(TWSt_MAP_scaler, col = plt, zlim = c(-1, 1))
-
 writeRaster(TWSt_MAP_scaler, here::here("ProducedData", "TWS_MAP_scaler_p10p90_1985_2014map.tif"),
             format = "GTiff", overwrite = T)
