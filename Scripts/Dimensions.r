@@ -10,7 +10,7 @@ library(fasterize); library(ggplot2);
 # load general files
 source(here::here("Scripts", "gen_funs.r"))
 ga <- WGS84_areaRaster(0.5)
-twst_i <- raster(here::here("ProducedData", "TWS_MAP_sclaer_p10p90_1985_2014map.tif"))
+twst_i <- raster(here::here("ProducedData", "TWS_MAP_scaler_p10p90_1985_2014map.tif")) 
 Mask <- raster(here::here("ProducedData", "GlobalMask.tif"))
 
 ####################1. population dimension
@@ -161,7 +161,6 @@ for (i in 1:length(write.stack)) {
               by.layer = TRUE, format = "GTiff", overwrite = T)
 }
 
-
 ######################################################.
 ######### - make plots for SI - #######################.
 ######################################################.
@@ -179,7 +178,6 @@ VSI.pctl <- tmap_clipproj(VSI.pctl)
 EFs <- tmap_clipproj(EFs)
 EFN.pctl <- tmap_clipproj(EFN.pctl)
 Mean.p <- tmap_clipproj(Sens.ind)
-
 
 plt = pals::ocean.balance(20)[3:18] %>% rev()
 plt1 = pals::jet(20)
@@ -213,7 +211,6 @@ ggplot(data = sm, aes(x = a, y = sum, color = a)) +
   coord_cartesian(expand = 0) +
   xlab("Percentile assignment") +
   ylab("Cumulative area (%)")
-
 
 ggsave(plot = last_plot(), here::here("Figures", "SI_figures", "Ecol_curveline.eps"),
        dpi = 500, width = 6, height = 4, units = "in")
