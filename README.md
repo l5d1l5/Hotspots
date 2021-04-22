@@ -1,4 +1,5 @@
-Code repository for the manuscript: "Hotspots of social and ecological impacts from freshwater stress and storage loss" (Huggins et al., in prep).
+**"Hotspots of social and ecological impacts from freshwater stress and storage loss"** (Huggins et al., in prep).
+Code repository:
 
 #### In `Data-preprocessing` folder:
 `1_resolution-harmonize.R` → Harmonizes all input data to 0.5 degrees. <br> 
@@ -7,7 +8,7 @@ Code repository for the manuscript: "Hotspots of social and ecological impacts f
 `4_hydrobasins-clean.R` → Prepares HydroBASINS discretization schemes for use at Levels 3, 4, and 5. <br>
 
 #### Core scripts:
-`0_udfs.R` → Code containing all user defined functions used in project. <br>
+`0_udfs.R` → All user defined functions used in project. <br>
 `0_load-libraries-udfs.R` → Loads all necessary libraries and user defined functions, located at the top of every subsequent script. <br>
 `1_freshwater-stress-tws-trends.R` → Calculates and compares freshwater stress and trends in terrestrial water storage. <br>
 `2_combined-freshwater-stress-indicator.R` → Derives an indicator to represent the co-occurrence of freshwater stress and storage loss. <br>
