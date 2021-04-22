@@ -1,6 +1,3 @@
-**"Hotspots of social and ecological impacts from freshwater stress and storage loss"** (Huggins et al., in prep).
-Code repository:
-
 #### In `Data-preprocessing` folder:
 `1_resolution-harmonize.R` → Harmonizes all input data to 0.5 degrees. <br> 
 `2_freshwater-consumption-and-withdrawal-rates-2010.R` → Prepares annual withdrawal and consumption rates from Huang et al. (2018) for the year 2010. <br>
