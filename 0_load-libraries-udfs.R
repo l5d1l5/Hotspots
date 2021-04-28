@@ -17,6 +17,7 @@ library(tmaptools)
 library(gdalUtils)
 library(scico)
 library(ggrepel)
+library(rgdal)
 library(RColorBrewer)
 library(BAMMtools)
 

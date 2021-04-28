@@ -43,7 +43,7 @@ cmb_ind <- max(min(( (fws_ind + tws_ind)/2 ), 1), 0)
 
 # Earthquake interference affects TWS trends in Japan & Malay Peninsula. We set the combined indicator score to just the FW stress indicator score for these regions.
 eqbas <- c(4130, 4440, # Japan
-           4451, 4430, 4454, 4457, 4457, 4459, 4460,
+           4451, 4430, 4457, 4457, 4459, 4460,
            5111, 5112, 5113, 5114, 5115, 5116, 5117, 5118, 5120, 5130) # Malay Pen.
 
 for (i in eqbas) {

@@ -130,7 +130,7 @@ amphsr[amphsr < 0 | amphsr > 129] <- 0
 
 # Create dataframe of all dimensions
 c_df <- raster::stack(dis, cind, ac15, pop, cal, gdp, amphsr, ramsar,
-                   WGS84_areaRaster(0.5)[]) %>% as.data.frame() %>% 
+                   WGS84_areaRaster(0.5)) %>% as.data.frame() %>% 
   set_colnames(c("dis", 'cind', 'ac', 'pop', 'cal', 'gdp', 'amphsr', 'ramsar', 'area'))
 c_df <- c_df[complete.cases(c_df$dis),] # remove NA dis rows
 
@@ -160,7 +160,9 @@ c_df <- c_df %>%
 # Loop through plotting the four dimensions
 pltdims <- c('popE', 'calE', 'gdpE', 'amph')
 aa = 0.4
+
 for (i in 1:length(pltdims)) {
+  
   mp <- ggplot(data = c_df, aes_string(x = 'cind', y = 'ac', size = pltdims[i] )) +
     annotate("rect", xmin=0,            xmax=ptls$ind[67], ymin=0,           ymax=ptls$ac[33], fill="#E6E6E6", alpha=aa) +  
     annotate("rect", xmin=0,            xmax=ptls$ind[67], ymin=ptls$ac[33], ymax=ptls$ac[67], fill="#BFBFBF", alpha=aa) +  
@@ -172,7 +174,8 @@ for (i in 1:length(pltdims)) {
     annotate("rect", xmin=ptls$ind[80], xmax=1,            ymin=ptls$ac[33], ymax=ptls$ac[67], fill="#9D5819", alpha=aa) +  
     annotate("rect", xmin=ptls$ind[80], xmax=1,            ymin=ptls$ac[67], ymax=1,           fill="#7E1900", alpha=aa) +
     geom_point(alpha= 0.5, shape = 21, color = 'black', stroke = 2) +
-    scale_size(range = c(.1, 24)) +
+    {if(i != 4)scale_size(range = c(.1, 24))} +
+    {if(i == 4)scale_size(range = c(.1, 12))} +
     xlab('') + ylab('')+
     coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), expand = c(0, 0), clip = "off") +
     scale_y_continuous(breaks = seq(0, 1, 0.2), 

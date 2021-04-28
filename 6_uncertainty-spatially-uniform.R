@@ -84,7 +84,7 @@ c_df$ecosens <- c_df$ecosens/max(c_df$ecosens, na.rm = T)
 # Begin sensitivity analysis ----
 
 # Establish number of realizations
-runs = 1e3
+runs = 1e4
 
 # Generate perturbation sets per variable, sampled from normal distributions of mean = 0 and standard deviation equal to 0.1 * the standard deviation of raw basin-aggregated distribution
 Cptb <- rnorm(runs, mean = 0, sd = 0.1*sqrt(var(c_df$cons)))
@@ -210,8 +210,9 @@ sensplot <-
   p_df %>% 
   gather(-hotspots, key = "var", value = "value") %>%
   ggplot(aes(x = value, y = hotspots)) +
-  geom_point(alpha = 0.5) +
-  geom_smooth() +
+  geom_point(alpha = 0.05, size = 1) + 
+  geom_point(data = NULL, aes(x = 0, y = 172), color = "red", size = 1.5) +
+  # geom_smooth(alpha = 0.5) +
   facet_wrap(~ var, nrow = 1) +
   scale_y_continuous(limits = c(0, 300)) +
   scale_x_continuous(limits = c(-0.2, 0.2)) +
@@ -257,6 +258,19 @@ ggsave(filename = "C:/Users/xande/Desktop/threshold_frequency_uniformpert.pdf",
        plot = last_plot(), device = 'pdf', width = 190/1.5, height = 100/1.5, 
        units = 'mm', dpi = 400)
 
+# Number of transitional+hotspots identified as so in > 95% of perturbations
+summary_df %>% filter(Actual == 1) %>% filter(Freq >= 0.95) %>% nrow()
+
+# Number of transitional+hotspots identified as so in > 50% of perturbations
+summary_df %>% filter(Actual == 1) %>% filter(Freq >= 0.50) %>% nrow()
+
+# Number of transitional+hotspots identified as so in < 50% of perturbations
+summary_df %>% filter(Actual == 1) %>% filter(Freq < 0.50) %>% nrow()
+
+# Number of *non* transitional+hotspots identified as so in > 50% of perturbations
+summary_df %>% filter(Actual == 0) %>% filter(Freq >= 0.50) %>% nrow()
+
+
 
 # Generate plots showing ranked frequency of basins identified as hotspot basins ----
 
@@ -289,3 +303,15 @@ ggplot(summary_df, aes(x=rank, y=Freq, fill=as.factor(Actual))) +
 ggsave(filename = "C:/Users/xande/Desktop/hotspot_frequency_uniformpert.pdf", 
        plot = last_plot(), device = 'pdf', width = 190/1.5, height = 100/1.5, 
        units = 'mm', dpi = 400)
+
+# Number of hotspots identified as so in > 95% of perturbations
+summary_df %>% filter(Actual == 1) %>% filter(Freq >= 0.95) %>% nrow()
+
+# Number of hotspots identified as so in > 50% of perturbations
+summary_df %>% filter(Actual == 1) %>% filter(Freq >= 0.50) %>% nrow()
+
+# Number of hotspots identified as so in < 50% of perturbations
+summary_df %>% filter(Actual == 1) %>% filter(Freq < 0.50) %>% nrow()
+
+# Number of *non* hotspots identified as so in > 50% of perturbations
+summary_df %>% filter(Actual == 0) %>% filter(Freq >= 0.50) %>% nrow()

@@ -17,6 +17,21 @@ agg <- c('Am', 'Fz') # Aggregate adaptive capacity and ecological sensitivity us
 Combs <- expand.grid(disL, agg, useC, sflw) %>%  
   set_colnames(c('disL', 'agg', 'useC', 'sflw'))
 
+# Flag zones of earthquake interference of TWS trends
+basid <- raster(here('Data/HyBas4_cleaned.tif'))
+eq_id <- c(4130, 4440, # Japan
+           4451, 4430, 4457, 4457, 4459, 4460,
+           5111, 5112, 5113, 5114, 5115, 5116, 5117, 5118, 5120, 5130) # Malay Pen.
+eq_rm <- raster(WGS84_areaRaster(0.5)) # Initiate this raster
+
+eq_rm[basid >= 0] <- 0
+
+for (e in eq_id) {
+  eq_rm[basid == e] <- 1
+}
+
+
+
 # Execute hotspot analysis for each alternative
 
 for (z in 1:nrow(Combs)) {
@@ -42,20 +57,20 @@ for (z in 1:nrow(Combs)) {
   }
   
   # Import consumption or withdrawal rate according to selection ----
-  if (Combs$useC[z] == 'C') {
+  if (Combs$useC[z] == 'W') {
     wuse <- raster(here('Data/Dimensions/TotalWithdrawls_2010.tif'))
   }
   
-  if (Combs$useC[z] == 'W') {
+  if (Combs$useC[z] == 'C') {
     wuse <- raster(here('Data/WaterUse/Consumption/TotalSum_2010.tif')) 
   }
   
   # import streamflow dataset according to selection ----
-  if (Combs$sflw[z] == 'Fz') {
+  if (Combs$sflw[z] == 'GSCD') {
     roff <- raster(here('Data/GSCD_Qmean_0d5.tif'))
   }
-  if (Combs$sflw[z] == 'Am') {
-    roff <- raster(here('Data/GRUN/MeanGRUN.tif'))*365.25 # day to year
+  if (Combs$sflw[z] == 'GRUN') {
+    roff <- raster(here('Data/GRUN/MeanGRUN.tif')) * 365.25 # /day to /year
   }
   
   # Generate inputs for the hotspot analysis, and ensure data from all alternatives can be executed without errors ----
@@ -107,16 +122,22 @@ for (z in 1:nrow(Combs)) {
   ac <- 1 - ac15
   
   # Derive combined freshwater stress indicator inputs
-  wuse <- FeatureAreaAverage(FT.id = dis, RawDS = wuse,
-                             AreaDS = WGS84_areaRaster(0.5), operation = 'mean',
+  wuse <- FeatureAreaAverage(FT.id = dis, 
+                             RawDS = wuse,
+                             AreaDS = WGS84_areaRaster(0.5), 
+                             operation = 'mean',
                              varnam = 'wuse')
   
-  roff <- FeatureAreaAverage(FT.id = dis, RawDS = roff,
-                             AreaDS = WGS84_areaRaster(0.5), operation = 'mean', 
+  roff <- FeatureAreaAverage(FT.id = dis, 
+                             RawDS = roff,
+                             AreaDS = WGS84_areaRaster(0.5), 
+                             operation = 'mean', 
                              varnam = 'roff')
   
-  tws <- FeatureAreaAverage(FT.id = dis, RawDS = tws, 
-                            AreaDS = WGS84_areaRaster(0.5), operation = 'mean', 
+  tws <- FeatureAreaAverage(FT.id = dis, 
+                            RawDS = tws, 
+                            AreaDS = WGS84_areaRaster(0.5), 
+                            operation = 'mean', 
                             varnam = 'tws')
   
   # Freshwater stress indicator
@@ -127,6 +148,28 @@ for (z in 1:nrow(Combs)) {
   
   # Combined freshwater stress indicator:
   cind <- max(min(( (fws_ind + tws_ind)/2 ), 1), 0)
+  
+  
+  # Set combined indicator to just the freshwater stress indicator where sufficient earthquake interference occurs
+  eq_fix <- raster::stack(dis, eq_rm, WGS84_areaRaster(0.5)) %>% 
+    as.data.frame() %>% 
+    set_colnames(c('dis', 'eq_rm', 'area'))
+  
+  eq_fix <- eq_fix[complete.cases(clip_df$dis),]
+  eq_fix <- eq_fix %>% 
+    group_by(dis) %>% 
+    summarize(
+      eq_cov = weighted.mean(x = eq_rm, w = area, na.rm = T)
+    )
+  
+  eq_ow <- eq_fix %>% filter(eq_cov > 0.1) %>% pull(dis)
+  
+  for (q in eq_ow) {
+    cind[dis == q] <- fws_ind[dis == q]
+  }
+  
+  cind_check <- raster(here('Data/fwss_ind_comb.tif'))
+  
   
   # Crop to where the combined stress indicator exists
   cind.ext <- cind
@@ -187,15 +230,20 @@ for (z in 1:nrow(Combs)) {
   # Identify class breaks in vulnerability using Head/Tail scheme
   htb_o <- ht_breaks2.0(x = c_df$overallprod, tsh = 0.8)
   
+  
   # Generate maps using these class breaks ----
   
   # Adaptive capacity and ecological sensitivity per basin
-  ac.f <- FeatureAreaAverage(FT.id = dis, RawDS = ac,
-                             AreaDS = WGS84_areaRaster(0.5), operation = 'mean',
+  ac.f <- FeatureAreaAverage(FT.id = dis, 
+                             RawDS = ac,
+                             AreaDS = WGS84_areaRaster(0.5), 
+                             operation = 'mean',
                              varnam = 'ac')
   
-  es.f <- FeatureAreaAverage(FT.id = dis, RawDS = (ef.ptl+vsi.ptl)/2,
-                             AreaDS = WGS84_areaRaster(0.5), operation = 'mean',
+  es.f <- FeatureAreaAverage(FT.id = dis, 
+                             RawDS = (ef.ptl+vsi.ptl)/2,
+                             AreaDS = WGS84_areaRaster(0.5), 
+                             operation = 'mean',
                              varnam = 'ecosens')
   es.f <- es.f/max(es.f[], na.rm = T)
   
@@ -214,9 +262,11 @@ for (z in 1:nrow(Combs)) {
   ovhot <- reclassify(ov.f*cind, rclmat, include.lowest = T)
   
   # Write classified raster for future analysis
-  writeRaster(ovhot, paste0(here('Data/Sensitivity'), "/", Combs$disL[z], "_", 
-                            Combs$agg[z], "_", Combs$useC[z], "_", Combs$stfl[z], 
-                            "_transitional", sep = ""), 
+  writeRaster(ovhot, paste0(here('Data/Sensitivity'), "/", 
+                            Combs$disL[z], "_", 
+                            Combs$agg[z], "_", 
+                            Combs$useC[z], "_", 
+                            Combs$sflw[z], "_transitional", sep = ""), 
               format = 'GTiff', overwrite = T)
   
   # Classify each grid cell using Head/Tail breaks into hotspot basin or not
@@ -226,10 +276,35 @@ for (z in 1:nrow(Combs)) {
   ovhot <- reclassify(ov.f*cind, rclmat, include.lowest = T)
   
   # Write classified raster for future analysis
-  writeRaster(ovhot, paste0(here('Data/Sensitivity'), "/", Combs$disL[z], "_", 
-                            Combs$agg[z], "_", Combs$useC[z], "_", Combs$stfl[z],
-                            "_hotspot", sep = ""),
+  writeRaster(ovhot, paste0(here('Data/Sensitivity'), "/", 
+                            Combs$disL[z], "_", 
+                            Combs$agg[z], "_", 
+                            Combs$useC[z], "_", 
+                            Combs$sflw[z], "_hotspot", sep = ""),
               format = 'GTiff', overwrite = T)
+  
+  # Classify each grid cell into all four vulnerability classes, for web-app
+  rclmat <- c(0,        htb_o[1],        0, 
+              htb_o[1], htb_o[2],        1,
+              htb_o[2], htb_o[3],        2,
+              htb_o[3], Inf,             3) %>% 
+    matrix(ncol = 3, byrow = T)
+  VulClass <- reclassify(ov.f*cind, rclmat, include.lowest = T)
+  
+  VulClass_sf <- raster::rasterToPolygons(VulClass, na.rm = T, dissolve = T)
+  
+  # Write vulnerability class shapefile for web-app
+  writeOGR(VulClass_sf, 
+           dsn = here('Web-app'), 
+           layer = paste0(Combs$disL[z], "_", 
+                          Combs$agg[z], "_", 
+                          Combs$useC[z], "_", 
+                          Combs$sflw[z], sep = ""),
+           driver = "ESRI Shapefile", overwrite = T)
+  
+  
+  print(z)
+  
 } # End of loop
 
 
@@ -270,7 +345,6 @@ coastlines <- sf::read_sf(here('Data/hybas_l4_coastlines.shp'))
 plotstack <- stack(FreqTrans, FreqHot)
 
 for (i in 1:nlayers(plotstack)) {
-  
   # Reproject for plotting in Robinson projection
   plt.obj <- tmap_clipproj(plotstack[[i]])
   

@@ -187,7 +187,8 @@ for (i in 1:length(pltdims)) {
     annotate("rect", xmin=3, xmax=Inf, ymin=0,   ymax=1, fill="#4B647D", alpha=aa) +  #downright
     annotate("rect", xmin=-3, xmax=3, ymin=1,    ymax=2, fill="#E6E6E6", alpha=aa) +  #centre  
     geom_point(alpha= 0.5, shape = 21, color = 'black', stroke = 2) +
-    scale_size(range = c(.1, 24), name="Population (M)") +
+    {if(i != 4)scale_size(range = c(.1, 24))} +
+    {if(i == 4)scale_size(range = c(.1, 12))} +
     xlab('') + ylab('')+
     coord_cartesian(xlim = c(-22, 22), ylim = c(0, 2), expand = c(0, 0), clip = "off") +
     scale_y_continuous(breaks = seq(0, 2, 1), 
