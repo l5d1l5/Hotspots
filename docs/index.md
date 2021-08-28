@@ -1,4 +1,4 @@
-This webpage is associated with the manuscript *Hotspots of social and ecological impacts from freshwater stress and storage loss* (Huggins et al. - in review), and allows you to explore the sensitivity of results given altnerative methodological configurations.
+This webpage is associated with the manuscript *Hotspots of social and ecological impacts from freshwater stress and storage loss* (Huggins et al. - in review), and allows you to explore the sensitivity of results given alternative methodological configurations.
 
 * Using the interactive map, use the dropdown menu options to change the data source(s), basin units, and aggregating vulnerbaility method. 
 * See how the hotspot basin results change given your personalized configurations. 
