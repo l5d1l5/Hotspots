@@ -15,6 +15,7 @@ This site allows you to explore the sensitivitiy of the social-ecological vulner
 <br/> 
 <img src="https://raw.githubusercontent.com/XanderHuggins/Hotspots/master/assets/WebApp_legend.png" 
   width="400" align="left"/>
+<br/> 
 
 | Options        | Alternatives | 
 | ------------- |:-------------:| 
