@@ -9,15 +9,12 @@ permalink: /
 This site allows you to explore the sensitivitiy of the social-ecological vulnerability hotspot reuslts to subjective aspects of the study's methodology. Select from the alternative methodological configurations below, and see how the hotspot results change in response. 
 
 <font style='font-size:12px' color='orange'> Note to Firefox users: you will need to interact with the dropdown menu below for results to appear. </font> 
-
 <br/>
 
 <iframe src="https://xanderhuggins.shinyapps.io/Hotspot-web-app/" width="100%" height="400px" frameBorder="0" ></iframe>
-<br/> <br/> 
-
+<br/> 
 <img src="https://raw.githubusercontent.com/XanderHuggins/Hotspots/master/assets/WebApp_legend.png" 
-  width="300" align="right"/>
-  
+  width="400" align="left"/>
 
 | Options        | Alternatives | 
 | ------------- |:-------------:| 
