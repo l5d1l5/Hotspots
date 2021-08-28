@@ -10,7 +10,10 @@ This webpage is associated with the manuscript *Hotspots of social and ecologica
 <img src="https://raw.githubusercontent.com/XanderHuggins/Hotspots/master/assets/WebApp_legend.png" 
   width="400" align="left"/>
 
+
+
 <br/> <br/> <br/> 
+
 
 
 | Options        | Alternatives | 
