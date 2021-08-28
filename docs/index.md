@@ -14,13 +14,12 @@ This site allows you to explore the sensitivitiy of the social-ecological vulner
 
 <font style='font-size:12px' color='orange'> Note to Firefox users: you will need to interact with the dropdown menu below for results to appear. </font> 
 
-<img src="https://raw.githubusercontent.com/XanderHuggins/Hotspots/master/assets/WebApp_legend.png" 
-  width="300" align="right"/>
-
 <br/>
 
 <iframe src="https://xanderhuggins.shinyapps.io/Hotspot-web-app/" width="100%" height="400px" frameBorder="0" ></iframe>
-
+<br/> <br/> 
+<img src="https://raw.githubusercontent.com/XanderHuggins/Hotspots/master/assets/WebApp_legend.png" 
+  width="300" align="right"/>
 | Options        | Alternatives | 
 | ------------- |:-------------:| 
 | Scale  | [HydroBASINS](https://www.hydrosheds.org/page/hydrobasins) levels 3 OR **4** OR 5 | 
