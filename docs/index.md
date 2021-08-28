@@ -1,4 +1,7 @@
-This site allows you to explore the sensitivitiy of the social-ecological vulnerability hotspot reuslts to subjective aspects of the study's methodology. Select from the alternative methodological configurations below, and see how the hotspot results change in response. 
+This webpage is associated with the manuscript *Hotspots of social and ecological impacts from freshwater stress and storage loss* (Huggins et al. - in review), and allows you to explore the sensitivity of results given altnerative methodological configurations.
+
+* Using the interactive map, use the dropdown menus to alter the data, basin units, and methodology. 
+* See how the hotspot basin results change given your personalized configurations. 
 
 <font style='font-size:12px' color='orange'> Note to Firefox users: you will need to interact with the dropdown menu below for results to appear. </font> 
 
