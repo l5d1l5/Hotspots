@@ -12,4 +12,4 @@ Author list: X. Huggins, T. Gleeson, M. Kummu, S.C. Zipper, Y. Wada. T.J. Troy, 
     * **udfs/** -- user defined (custom) functions
     * **analysis/** -- core scripts that perform analysis and generate all plots used in manuscript figures (assembled subsequently in Affinity Designer)
 * **assets/** -- holds images used as banner above and in interactive results webpage
-* **docs/** -- contains file for the associated github page providing interactive result @ xanderhuggins.github.io/Hotspots/
+* **docs/** -- contains file for the associated github page providing interactive result @ [this link](https://xanderhuggins.github.io/Hotspots/)
