@@ -1,7 +1,1 @@
 remote_theme: poole/poole
-title: Interactive hotspot results
-tagline: Interactive hotspot results
-description: Interactive hotspot results
-paginate: 1
-baseurl: ""
-permalink: pretty
