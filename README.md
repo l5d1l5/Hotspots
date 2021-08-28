@@ -11,5 +11,5 @@ Author list: X. Huggins, T. Gleeson, M. Kummu, S.C. Zipper, Y. Wada. T.J. Troy, 
     * **preprocessing/** -- data preparation scripts 
     * **udfs/** -- user defined (custom) functions
     * **analysis/** -- core scripts that perform analysis and generate all plots used in manuscript figures (assembled subsequently in Affinity Designer)
-* **assets/** -- holds image used as banner above
-* **streamlit/** -- runs streamlit app for interactive subjectivity results (goes to sleep after consecutive days of inactivity)
+* **assets/** -- holds images used as banner above and in interactive results webpage
+* **docs/** -- contains file for the associated github page providing interactive result @ xanderhuggins.github.io/Hotspots/
