@@ -3,10 +3,12 @@
 # @Description - Perform uncertainty analysis, considering potential spatially uniform uncertainty in input data.
 ################################################################################
 
-# Load 'here' library for easy path management. 'load-libraries-udfs.R' loads all necessary libraries and all user defined functions 
+# Load 'here' library for easy path management.  
 library(here)
-source(here("0_load-libraries-udfs.R"))
 
+# Import all setup and user-defined functions in R/setup and R/udfs folders
+invisible(sapply(paste0(here("R/setup"), "/", list.files(here("R/setup"))), source)) 
+invisible(sapply(paste0(here("R/udfs"), "/", list.files(here("R/udfs"))), source))
 # Set a seed for reproducability
 set.seed(47274497) #T9 of GSAS+GIWS
 

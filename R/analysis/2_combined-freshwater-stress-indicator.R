@@ -3,9 +3,12 @@
 # @Description - Calculate the combined freshwater stress and TWS trend indicator. 
 ################################################################################
 
-# Load 'here' library for easy path management. 'load-libraries-udfs.R' loads all necessary libraries and all user defined functions 
+# Load 'here' library for easy path management.  
 library(here)
-source(here("0_load-libraries-udfs.R"))
+
+# Import all setup and user-defined functions in R/setup and R/udfs folders
+invisible(sapply(paste0(here("R/setup"), "/", list.files(here("R/setup"))), source)) 
+invisible(sapply(paste0(here("R/udfs"), "/", list.files(here("R/udfs"))), source))
 
 # Import data ----
 wuse <- raster(here('Data/Dimensions/TotalWithdrawls_2010.tif'))

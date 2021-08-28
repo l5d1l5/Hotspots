@@ -3,9 +3,12 @@
 # @Description - Perform sensitivity analysis, considering the impact of subjective methodological decisions.
 ################################################################################
 
-# Load 'here' library for easy path management. 'load-libraries-udfs.R' loads all necessary libraries and all user defined functions 
+# Load 'here' library for easy path management.  
 library(here)
-source(here("0_load-libraries-udfs.R"))
+
+# Import all setup and user-defined functions in R/setup and R/udfs folders
+invisible(sapply(paste0(here("R/setup"), "/", list.files(here("R/setup"))), source)) 
+invisible(sapply(paste0(here("R/udfs"), "/", list.files(here("R/udfs"))), source))
 
 # Set methodology alternative labels
 disL <- c('L3', 'L4', 'L5') # HydroBASINS levels 3, 4, or 5
