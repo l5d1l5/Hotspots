@@ -1,6 +1,6 @@
 ---
 layout: default
-title: ' '  
+title: Interactive results  
 nav_order: 1
 description: "Interactive results for Hotspots of social and ecological impacts from freshwater stress and storage loss."
 permalink: /
