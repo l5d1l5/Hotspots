@@ -3,7 +3,7 @@
 ![cover-image](assets/thumbnail.png)
 
 *Manuscript currently under review at Nature Communications.* <br/>
-Auhtor list: X. Huggins, T. Gleeson, M. Kummu, S.C. Zipper, Y. Wada. T.J. Troy, J.S. Famiglietti  
+Author list: X. Huggins, T. Gleeson, M. Kummu, S.C. Zipper, Y. Wada. T.J. Troy, J.S. Famiglietti  
 
 ## Repository structure
 * **R/** -- 
