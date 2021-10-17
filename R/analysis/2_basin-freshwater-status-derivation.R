@@ -1,6 +1,6 @@
 ################################################################################
 # @Manuscript - "Hotspots of social and ecological impacts from freshwater stress and storage loss" (Huggins et al.) 
-# @Description - Calculate the combined freshwater stress and TWS trend indicator. 
+# @Description - Derive the basin freshwater status indicator. 
 ################################################################################
 
 # Load 'here' library for easy path management.  
@@ -41,7 +41,7 @@ fws_ind <- min((wuse/(0.4*roff)), 1)
 # Terrestrial water storage trend indicator
 tws_ind <- max(min((tws/(0.4*roff)), 1), -1) * -1
 
-# Create combined indicator
+# Basin freshwater status
 cmb_ind <- max(min(( (fws_ind + tws_ind)/2 ), 1), 0)
 
 # Earthquake interference affects TWS trends in Japan & Malay Peninsula. We set the combined indicator score to just the FW stress indicator score for these regions.
@@ -53,7 +53,7 @@ for (i in eqbas) {
   cmb_ind[dis == i] <- fws_ind[dis == i]
 }
 
-# Write the combined freshwater stress indicator raster for future use           
+# Write the basin freshwater status indicator raster for future use           
 writeRaster(cmb_ind, here('Data/fwss_ind_comb.tif'), format = 'GTiff',
             overwrite = T)
 

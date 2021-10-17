@@ -16,7 +16,8 @@ ac15 <- raster(here::here("Data", "AdaptiveCap2015.tif"))
 efn <- raster(here("Data/Dimensions/EFN_0d5.tif"))
 vsi <- raster(here("Data/Dimensions/VSI_aetw_0d5.tif"))
 dis  <- raster(here('Data/HyBas4_cleaned.tif'))
-SDG651 <- readr::read_csv(here('Data/SDG651_2017_baseline_cleaned.csv'))
+SDG651_17 <- readr::read_csv(here('Data/SDG651_2017_baseline_cleaned.csv'))
+SDG651_20 <- readr::read_csv(here('Data/SDG651_2020_stripped.csv'))
 faoGAUL <- read_sf(here('Data/go_countryborders_faogaul2014Polygon.shp'))
 
 # Create ID raster based on FAO GAUL ----
@@ -28,20 +29,26 @@ GAULras <- fasterize(sf = faoGAUL, raster = WGS84_areaRaster(0.05), field = 'uid
 # Aggregate to operating resolution using modal value
 GAULras <- aggregate(GAULras, fact = 10, expand = FALSE, fun = modal, na.rm = T)
 
-
 # Convert SDG 6.5.1: IWRM implementation scores to raster, by joining w/ GAUL ----
-SDGgaul <- merge(x = faoGAUL, y = SDG651, by.x = 'ccode', by.y = 'ISOcode')
+SDGgaul_17 <- merge(x = faoGAUL, y = SDG651_17, by.x = 'ccode', by.y = 'ISOcode')
+SDGgaul_20 <- merge(x = faoGAUL, y = SDG651_20, by.x = 'ccode', by.y = 'ISO3')
 
 # Rasterize at fine resolution
-SDGfinal <- fasterize(sf = SDGgaul, raster = WGS84_areaRaster(0.05), field = 'Final', fun = 'min')
+SDGfinal_17 <- fasterize(sf = SDGgaul_17, raster = WGS84_areaRaster(0.05), field = 'Final', fun = 'min')
+
+SDGfinal_20 <- fasterize(sf = SDGgaul_20, raster = WGS84_areaRaster(0.05), field = 'SDG651_2020', fun = 'min')
 
 # Aggregate to operating resolution using mean value (ignore area-differences among contributing cells)
-SDGfinal <- aggregate(SDGfinal, fact = 10, expand = FALSE, fun = mean, na.rm = T)
+SDGfinal_17 <- aggregate(SDGfinal_17, fact = 10, expand = FALSE, fun = mean, na.rm = T)
+SDGfinal_20 <- aggregate(SDGfinal_20, fact = 10, expand = FALSE, fun = mean, na.rm = T)
+
+# Replace NAs in 2020 with values in 2017 if they exist
+SDGfinal_latest <- SDGfinal_20
+SDGfinal_latest[is.na(SDGfinal_20)] <- SDGfinal_17[is.na(SDGfinal_20)]
 
 # Reproduce vulnerability inputs from script 4_... ----
 
 # Social ecological sensitivity inputs, see comments in script 4_...
-
 dis.ext <- dis
 dis.ext[dis.ext >= 0] <- 1
 ef.ptl <- RasterAreaPercentiles(RasterToClassify = efn,
@@ -65,13 +72,13 @@ ac <- 1 - ac15
 
 
 # Create IWRM  mask to remove missing regions from analysis -----
-Mask <- raster(SDGfinal)
+Mask <- raster(SDGfinal_latest)
 Mask[] <- 0
-Mask[SDGfinal > 0] <- 1
+Mask[SDGfinal_latest > 0] <- 1
 
 
 # Calculate basin average values of vulnerability inputs and IWRM implementation levels ----
-c_df <- raster::stack(dis, cind, ef.ptl, vsi.ptl, ac, SDGfinal, Mask, GAULras,
+c_df <- raster::stack(dis, cind, ef.ptl, vsi.ptl, ac, SDGfinal_latest, Mask, GAULras,
                       WGS84_areaRaster(0.5)) %>% as.data.frame() %>% 
   set_colnames(c('dis', 'cind', 'efn',  'vsi', 'ac', 'sdg651', 'mask', 'cc', 'area'))
 c_df <- c_df[complete.cases(c_df$dis),]
@@ -106,7 +113,7 @@ c_df$ecosens <- c_df$ecosens/max(c_df$ecosens, na.rm = T)
 # Derive social-ecological sensitivity from fuzzy sum of eco. sens. and inv. ac. 
 c_df$overallsens <- 1 - (1-c_df$ecosens)*(1-c_df$ac) # this is fuzzy sum
 
-# Social-ecological vulnerabiltiy as product of sensitivity and combined stress indicator
+# Social-ecological vulnerabiltiy as product of sensitivity and basin freshwater status
 c_df$overallprod <- c_df$cind * c_df$overallsens
 
 # Identify vulnerability class breaks using Head/Tail breaks
@@ -181,43 +188,14 @@ mp <- ggplot() +
   
   # mask areas under first break
   annotate("rect", xmin=0,  xmax=htb_o[2], ymin=0,  ymax=100, fill="white", alpha=1.5*aa) +
-  
-  # # label some basins in clumped region ---- Keeping for posterity
-  # geom_text_repel(data=subset(c_df, overallprod > htb_o[1] & tsbd > 1 & mask > 0.5 & 
-  #                               sdg < 70 & sdg > 30 & rn %% 5 == 0),
-  #                 aes(overallprod, sdg, label=label), size = 2) +
-  
-  # label all basins in open regions 
-  # geom_text_repel(data=subset(c_df, overallprod > htb_o[2] & tsbd >= 2 & mask > 0.5 & sdg > 70),
-  #                 aes(overallprod, sdg, label=label), size = 2) +
-  # 
-  # geom_text_repel(data=subset(c_df, overallprod > htb_o[2] & tsbd >= 2 & mask > 0.5 & sdg < 30),
-#                 aes(overallprod, sdg, label=label), size = 2) +
-# 
-# geom_text_repel(data=subset(c_df, overallprod > htb_o[3] & tsbd >= 2 & mask > 0.5 & 
-#                               sdg > 30 & sdg < 70),
-#                 aes(overallprod, sdg, label=label), size = 2) +
-# 
-# geom_text_repel(data=subset(c_df, overallprod > htb_o[2] & tsbd >= 2 & mask > 0.5 & 
-#                               sdg > 30 & sdg < 70 & overallprod < htb_o[3] & 
-#                               rn %% 3 == 0),
-#                 aes(overallprod, sdg, label=label), size = 2) +
-# 
-# geom_text_repel(data=subset(c_df, overallprod > htb_o[2] & tsbd >= 2 & mask > 0.5 & 
-#                               sdg > 30 & sdg < 70 & overallprod < htb_o[2] & 
-#                               rn %% 5 == 0),
-#                 aes(overallprod, sdg, label=label), size = 2) +
-
-
-# scale_size(range = c(.1, 24), name="Population (M)") +
-coord_cartesian(xlim = c(0, 1), ylim = c(0, 100), expand = c(0, 0), clip = "on") +
   scale_y_continuous(breaks = seq(10, 90, 20), 
                      limits = c(0, 100)) + 
-  theme1 + theme(axis.ticks.x = element_line(size = 1)) 
+  theme1 + theme(axis.ticks.x = element_line(size = 1)) +
+  coord_cartesian(xlim = c(0, 1), ylim = c(0, 100), expand = c(0, 0), clip = "on")
 mp
 
 ggsave(plot = mp, 
-       paste0("C:/Users/xande/Desktop/jt_prep/5_iwrm_scatter.pdf", sep = ""),
+       paste0("C:/Users/xande/Desktop/jt_prep/5_iwrm_scatter_update.pdf", sep = ""),
        bg = 'transparent', dpi = 500, width = 6, height = 4, units = "in")
 
 
@@ -236,6 +214,21 @@ rsq(s_df$overallprod, s_df$sdg/100)
 # Evaluate for hotspot basins
 s_df <- s_df %>% filter(overallprod >= htb_o[2])
 rsq(s_df$overallprod, s_df$sdg/100)
+
+# Identify number of basins 
+c_df %>% nrow() ## output = 1204; total number of basins
+c_df %>% filter(ovhot == 2) %>% nrow() ## output = 172; number of basins in hotspots
+c_df %>% filter(ovhot == 2 & tsbd >= 2) %>% nrow() ## output = 61; # that are transboundary
+61/172
+
+c_df %>% filter(ovhot == 2 & sdg < 50) %>% nrow() ## output = 172; hotspot basins w/ low IWRM
+c_df %>% filter(ovhot == 2 & tsbd >= 2 & sdg < 50) %>% nrow() ## output = 30
+
+hot_trsb_sdg <- c_df %>% filter(ovhot == 2 & tsbd >= 2) %>% pull(sdg) 
+hot_nontrsn_sdg <- c_df %>% filter(ovhot == 2 & tsbd < 2) %>% pull(sdg) 
+
+t.test(x = hot_nontrsn_sdg, y = hot_trsb_sdg, alternative = "g")
+
 
 
 # Create corresponding map ----
@@ -271,7 +264,7 @@ rclmat <- c(0,  10, 1,
             50, 70, 4,
             70, 90, 5,
             90, 100,6) %>% matrix(ncol = 3, byrow = T)
-IWRMclass <- reclassify(SDGfinal, rclmat)
+IWRMclass <- reclassify(SDGfinal_latest, rclmat)
 
 
 # Plot map 
@@ -293,7 +286,8 @@ fade.zn <- raster(IWRMclass)
 fade.zn[OvHot <= htb_o[2]] <- 1
 fade.zn <- tmap_clipproj(fade.zn)
 
-cus.pal <- c("#8E292F", "#D57F31", "#E8BA24", "#81BF81", "#6CBDEF", "#0D7EB6")
+cus.pal <- c( #"#8E292F", 
+  "#D57F31", "#E8BA24", "#81BF81", "#6CBDEF", "#0D7EB6")
 
 tm <- 
   tm_shape(plt.obj, projection = "+proj=robin") + 
@@ -309,4 +303,4 @@ tm <-
             outer.margins = c(-0, -0.09, -0, -0.04)) # B, L, T, R
 tm
 
-tmap_save(tm, "C:/Users/xande/Desktop/jt_prep/5_iwrm.svg", units = "in")
+tmap_save(tm, "C:/Users/xande/Desktop/jt_prep/5_iwrm_update.svg", units = "in")

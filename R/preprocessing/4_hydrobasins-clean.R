@@ -88,3 +88,98 @@ hybas_rasag_cleaned <- hybas_rasag*ClipExtent
 # Write cleaned raster
 writeRaster(hybas_rasag_cleaned, here::here("Data", "HyBas3_cleaned.tif"), 
             format = "GTiff", overwrite = T)
+
+# Calculate statistics ---- 
+
+# Calculate coverage statistics for Level 4 HydroBASINS
+
+# import raw shapefile
+hbl4 <- sf::read_sf("D:/!! Geodatabase/Basins/hybas/Processed/hybas_l4.shp")
+df_l4 <- hbl4 %>% pull(PFAF_ID) %>% unique()
+length(df_l4)
+## output = 1341
+
+df_l4_area <- hbl4 %>% pull(SUB_AREA) %>% sum()/1e6
+## output = 134.9
+
+# Number of basins - cleaned
+l4_cleaned_ras <- raster(here("Data/HyBas4_cleaned.tif"))
+keep_id <- l4_cleaned_ras %>% unique()
+
+disclude <- c(1130, 1520, 1840, 2170, 2360, 2450, 2530, 3550, 4240,
+              4370, 5320, 5330, 5370, 5430, 5520, 5530, 5540, 5740,
+              6540, 6730, 7220, 7610, 7630, 7650, 7710, 7740)
+
+for (i in 1:length(disclude)) {
+  keep_id <- keep_id[keep_id != disclude[i]]
+}
+
+keep_id <- keep_id %>% as.character()
+hbl4$PFAF_ID <- hbl4$PFAF_ID %>% as.character()
+hbl4_strip <- hbl4[hbl4$PFAF_ID %in% keep_id, ]
+
+d4_strip_area <- hbl4_strip %>% pull(SUB_AREA) %>% sum()/1e6 
+## output = 132.0
+
+# Proportion of coverage
+# Basin count
+1204/1341
+## output = 89.8%
+
+# Area coverage
+132.0/134.8
+## output = 97.8%
+
+
+# Now repeat if using raster based stats
+hbl4 <- sf::read_sf("D:/!! Geodatabase/Basins/hybas/Processed/hybas_l4.shp")
+mean(hbl4$SUB_AREA)
+median(hbl4$SUB_AREA)
+hybas_ras <- fasterize(sf = hbl4, raster = WGS84_areaRaster(0.05),  
+                       field = 'PFAF_ID')
+
+# Aggregate using modal value, ignoring NAs
+hybas_rasag <- aggregate(hybas_ras, fact = 10,
+                         expand = FALSE, fun = modal, na.rm = T)
+
+c_df <- raster::stack(hybas_rasag, WGS84_areaRaster(0.5)) %>% 
+  as.data.frame() %>% 
+  set_colnames(c('id', 'area'))
+
+c_df %>% filter(id > 0) %>% pull(area) %>% sum()/1e6
+
+## output = 148.2
+
+# And for cleaned geotif
+l4_cleaned_ras <- raster(here("Data/HyBas4_cleaned.tif"))
+
+disclude <- c(1130, 1520, 1840, 2170, 2360, 2450, 2530, 3550, 4240,
+              4370, 5320, 5330, 5370, 5430, 5520, 5530, 5540, 5740,
+              6540, 6730, 7220, 7610, 7630, 7650, 7710, 7740)
+
+for (i in disclude) {
+  l4_cleaned_ras[l4_cleaned_ras == i] <- NA
+}
+
+c_df <- raster::stack(l4_cleaned_ras, WGS84_areaRaster(0.5)) %>% 
+  as.data.frame() %>% 
+  set_colnames(c('id', 'area'))
+
+temp <- c_df %>% 
+  group_by(id) %>% 
+  summarize(
+    sa = sum(area, na.rm = T)
+    ) 
+
+temp <- temp[complete.cases(temp$id),]
+summary(temp$sa)
+nrow(temp)
+
+temp2 <- hbl4 %>% filter(SUB_AREA > 100*100)
+summary(temp2$SUB_AREA)
+nrow(temp2)
+
+c_df %>% filter(id > 0) %>% pull(area) %>% sum()/1e6
+## output = 143.2
+143.2/148.2
+# 97%

@@ -1,6 +1,6 @@
 ################################################################################
 # @Manuscript - "Hotspots of social and ecological impacts from freshwater stress and storage loss" (Huggins et al.) 
-# @Description - Perform sensitivity analysis, considering the impact of subjective methodological decisions.
+# @Description - Perform sensitivity analysis on the impact of subjective methodological decisions.
 ################################################################################
 
 # Load 'here' library for easy path management.  
@@ -32,8 +32,6 @@ eq_rm[basid >= 0] <- 0
 for (e in eq_id) {
   eq_rm[basid == e] <- 1
 }
-
-
 
 # Execute hotspot analysis for each alternative
 
@@ -96,8 +94,10 @@ for (z in 1:nrow(Combs)) {
   
   disclude <- clip_df %>% filter(cvg == 0) %>% pull(dis)
   
-  for (i in 1:length(disclude)) {
-    dis[dis == disclude[i]] <- NA
+  if (length(disclude) > 0) {
+    for (i in 1:length(disclude)) {
+      dis[dis == disclude[i]] <- NA
+    } 
   }
   
   # Establish a masking extent
@@ -124,7 +124,7 @@ for (z in 1:nrow(Combs)) {
   # Invert adaptive capacity
   ac <- 1 - ac15
   
-  # Derive combined freshwater stress indicator inputs
+  # Derive basin freshwater status inputs
   wuse <- FeatureAreaAverage(FT.id = dis, 
                              RawDS = wuse,
                              AreaDS = WGS84_areaRaster(0.5), 
@@ -149,11 +149,11 @@ for (z in 1:nrow(Combs)) {
   # Storage trend indicator
   tws_ind <- max(min((tws/(0.4*roff)), 1), -1)*-1
   
-  # Combined freshwater stress indicator:
+  # basin freshwater status:
   cind <- max(min(( (fws_ind + tws_ind)/2 ), 1), 0)
   
   
-  # Set combined indicator to just the freshwater stress indicator where sufficient earthquake interference occurs
+  # Set basin freshwater status to just the freshwater stress indicator where sufficient earthquake interference occurs
   eq_fix <- raster::stack(dis, eq_rm, WGS84_areaRaster(0.5)) %>% 
     as.data.frame() %>% 
     set_colnames(c('dis', 'eq_rm', 'area'))
@@ -171,10 +171,7 @@ for (z in 1:nrow(Combs)) {
     cind[dis == q] <- fws_ind[dis == q]
   }
   
-  cind_check <- raster(here('Data/fwss_ind_comb.tif'))
-  
-  
-  # Crop to where the combined stress indicator exists
+  # Crop to where the basin freshwater status exists
   cind.ext <- cind
   cind.ext[cind.ext >= 0] <- 1
   cind.ext[is.na(cind)] <- 0
@@ -199,7 +196,7 @@ for (z in 1:nrow(Combs)) {
     } 
   }
   
-  # Vectorize rasters for faster computation
+  # Convert raster stack to dataframe for faster computation
   c_df <- raster::stack(dis, cind, ef.ptl, vsi.ptl, ac, WGS84_areaRaster(0.5)) %>% 
     as.data.frame() %>% 
     set_colnames(c('dis', 'cind', 'efn', 'vsi', 'ac', 'area'))

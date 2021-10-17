@@ -1,11 +1,14 @@
 ################################################################################
 # @Manuscript - "Hotspots of social and ecological impacts from freshwater stress and storage loss" (Huggins et al.) 
-# @Description - Perform uncertainty analysis, considering potential spatially variable uncertainty in input data.
+# @Description - Perform spatially variable uncertainty analysis.
 ################################################################################
 
-# Load 'here' library for easy path management. 'load-libraries-udfs.R' loads all necessary libraries and all user defined functions 
+# Load 'here' library for easy path management.  
 library(here)
-source(here("0_load-libraries-udfs.R"))
+
+# Import all setup and user-defined functions in R/setup and R/udfs folders
+invisible(sapply(paste0(here("R/setup"), "/", list.files(here("R/setup"))), source)) 
+invisible(sapply(paste0(here("R/udfs"), "/", list.files(here("R/udfs"))), source))
 
 # Set a seed for reproducability
 set.seed(47274497) #T9 of GSAS+GIWS
@@ -146,7 +149,7 @@ for (i in 1:nrow(s_df)) {
   t_df$ecosens <- (t_df$vsi + t_df$efn)/2
   t_df$ecosens <- t_df$ecosens/max(t_df$ecosens, na.rm = T)
   
-  # Calculate combined freshwater stress indicator
+  # Calculate basin freshwater status
   for (j in 1:nrow(t_df)) {
     t_df$fws_ind[j] <- min((t_df$cons[j]/(0.4*t_df$roff[j])), 1)
     t_df$tws_ind[j] <- max(min((t_df$tws[j]/(0.4*t_df$roff[j])), 1), -1)*-1
@@ -196,17 +199,16 @@ for (i in 1:nrow(s_df)) {
 }
 
 # Save results
-write.csv(s_df, here('Data/montecaro_scalevariance.csv'))
-write.csv(bt_df, here('Data/thresholdbasins_scalevariance.csv'))
-write.csv(bh_df, here('Data/hotspotbasins_scalevariance.csv'))
+write.csv(s_df, here('Data/montecaro_scalevariance-update.csv'))
+write.csv(bt_df, here('Data/thresholdbasins_scalevariance-update.csv'))
+write.csv(bh_df, here('Data/hotspotbasins_scalevariance-update.csv'))
 
 # Plot and analyze sensitivity results ----
 
 # Load sensitivity results (so to save from having to rerun sensitivity loop)
-s_df <- read.csv(here('Data/montecaro_scalevariance.csv'))
-bt_df <- read.csv(here('Data/thresholdbasins_scalevariance.csv'))
-bh_df <- read.csv(here('Data/hotspotbasins_scalevariance.csv'))
-
+s_df <- read.csv(here('Data/montecaro_scalevariance-update.csv'))
+bt_df <- read.csv(here('Data/thresholdbasins_scalevariance-update.csv'))
+bh_df <- read.csv(here('Data/hotspotbasins_scalevariance-update.csv'))
 
 # Select columns of interest to plot
 p_df <- s_df %>% dplyr::select(NhotH, NhotVH, Cptb, Qptb, Tptb, Aptb, Eptb, Vptb)

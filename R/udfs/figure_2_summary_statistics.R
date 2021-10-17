@@ -1,5 +1,5 @@
 # Modstress_badAC; Modstress_goodAC; Highstress_badAC; Highstress_goodAC ----
-# Functions to calculate social-ecological activity statistics for various combined freshwater stress indicator and adaptive capacity combinations
+# Functions to calculate social-ecological activity statistics for various basin freshwater status and  adaptive capacity combinations
 
 Modstress_badAC <- function(df.in, col.in, norm.by) {
   glob.sum <- df.in %>% pull(col.in) %>% sum(na.rm = T)

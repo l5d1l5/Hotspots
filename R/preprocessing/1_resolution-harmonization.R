@@ -59,16 +59,16 @@ AdaptiveCap_2015 <- raster(t(AdaptiveCap[,,26]), xmn=min(lon), xmx=max(lon), ymn
                            crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
 extent(AdaptiveCap_2015) <- c(-180, 180, -90, 90)
 
-AC_2015_rs <- resample(x = AdaptiveCap_2015, y = WGS84_areaRaster(0.5), method = 'bilinear')
-writeRaster(AC_2015_rs, here("Data/AdaptiveCap2015.tif"),
-            format = 'GTiff', overwrite = T)
+x = 0.5/res(AdaptiveCap_2015)
+AC_2015_0d5 <- raster::aggregate(x = AdaptiveCap_2015, fact = x, fun = mean, expand = F, na.rm = T, 
+                                filename = here::here("Data", "AdaptiveCap2015.tif"),
+                                overwrite = T)
 
-
-# Crop calories ----
-Cal <- raster(here::here("Data", "Dimensions", "Glbkcal.tif"))
+# Food crop calories from Kummu et al. 2021, converted from SPAM ----
+Cal <- raster("D:/!! Geodatabase/Agriculture/SPAM/SPAM_2010_foodcrops_kcal.tif")
 x = 0.5/res(Cal)
 Cal_0d5 <- raster::aggregate(x = Cal, fact = x, fun = sum, expand = F, na.rm = T, 
-                             filename = here::here("Data", "Dimensions", "kcal_0d5.tif"))
+                             filename = here::here("Data", "Dimensions", "SPAM_foodcrops_kcal_0d5.tif"))
 
 # GDP ----
 GDP <- nc_open(here::here("Data", "Dimensions", "GDP_PPP_1990_2015_5arcmin_v2.nc"))
@@ -81,7 +81,7 @@ fv = ncatt_get(GDP, v.name, "_FillValue")
 GDP_years <- ncvar_get(GDP, v.name)
 dim(GDP_years)
 
-# 2015 is year # 26 (last year) in dataset
+# 2015 is year 26 (last year) in netCDF
 GDP_2015 <- raster(t(GDP_years[,,26]), xmn=min(lon), xmx=max(lon), 
                    ymn=min(lat), ymx=max(lat), 
                    crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
@@ -106,7 +106,7 @@ gdalwarp(srcfile = here::here("Data", "Dimensions", "all_amphibians.tif"),
          verbose = TRUE)
 
 
-# Ramsar wetlands ----
+# Ramsar Sites ----
 ramsar <- readr::read_csv('D:/!! Geodatabase/Biodiversity/ris-tabular-20210322.csv')
 ramsar.pts <- SpatialPoints(cbind(ramsar$Longitude, ramsar$Latitude))
 crs(ramsar.pts) <- crs("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+")
@@ -119,15 +119,18 @@ writeRaster(ramsar.pts, here("Data/ramsar_count.tif"),
 
 
 # World Conflict Chronology
-WCC <- readr::read_csv('C:/Users/xande/Desktop/Scripts/SimilarityIndex/Data/Raw/WCC_PacificInstitute_926conflicts.csv') %>% as.data.frame()
+WCC <- readr::read_csv('D:/!! Geodatabase/Social-data/Water-conflict/WCC/WCC_PacificInstitute_926conflicts.csv') %>% 
+  as.data.frame() %>%
+  filter(Start >= 2000)
 WCC$Long %<>% as.numeric()
 WCC <- WCC[complete.cases(WCC$Lat),]
 WCC <- WCC[complete.cases(WCC$Long),]
 WCC <- st_as_sf(WCC, coords = c("Long", "Lat"), crs = 4326)
 WCC$Counter <- 1
-WCC_last20 <- WCC %>% filter(Start >= 2000) %>% filter(grepl('Trigger', Basis))
+# WCC_last20 <- WCC %>% filter(Start >= 2000) %>% filter(grepl('Trigger', Basis))
 
-WCC_L20_count <- raster::rasterize(WCC_last20, WGS84_areaRaster(0.5), 
+WCC_L20 <- raster::rasterize(WCC, WGS84_areaRaster(0.5), 
                                    field = 'Counter', fun = 'count')
-writeRaster(WCC_L20_count, 'C:/Users/xande/Desktop/Scripts/SimilarityIndex/Data/cleaned/WCC_L20_trigger_count.tif', 
+writeRaster(WCC_L20, 
+            here::here("Data", "Dimensions", "WCC_since2000.tif"),
             format = 'GTiff', overwrite = T)

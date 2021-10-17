@@ -1,6 +1,6 @@
 ################################################################################
 # @Manuscript - "Hotspots of social and ecological impacts from freshwater stress and storage loss" (Huggins et al.) 
-# @Description - Derive freshwater stress and compare to freshwater storage trends, per basin. Plot results. 
+# @Description - Derive freshwater stress and compare to freshwater storage trends per basin. Plot results. 
 ################################################################################
 
 # Load 'here' library for easy path management.  
@@ -123,7 +123,7 @@ tws  <- raster(here('Data/Rodell_GRACE_TWSt_raw.tif')) * 10 # cm to mm
 
 # Import social-ecological dimension data
 pop <- raster(here("Data/Dimensions/gpw_v4_population_count_adjusted_to_2015_unwpp_country_totals_rev11_2015_30_min.tif"))
-cal <- raster(here("Data/Dimensions/kcal_0d5.tif"))
+cal <- raster(here("Data/Dimensions/SPAM_foodcrops_kcal_0d5.tif"))
 gdp <- raster(here("Data/Dimensions/GDP_2015_0d5.tif"))
 amphsr <- raster(here('Data/all_amph_0d5.tif'))
 ramsar <- raster(here('Data/ramsar_count.tif'))
@@ -181,6 +181,9 @@ aa = 0.4 # Transparency
 c_df$StressLog10 <- log10(100*c_df$fwstrs) # Convert stress to log10 scale 
 c_df$StressLog10 <- ifelse(c_df$StressLog10 < 0, 0, c_df$StressLog10) # Handle small values
 
+c_df$ramsar[c_df$ramsar == 0] <- NA # set 0s to NA so they don't appear when plotting
+c_df$amph[c_df$amph == 0] <- NA # set 0s to NA so they don't appear when plotting
+
 for (i in 1:length(pltdims)) {
   
   mp <- ggplot(data = c_df, aes_string(x = 'tws', y = 'StressLog10', size = pltdims[i] )) +
@@ -192,6 +195,9 @@ for (i in 1:length(pltdims)) {
     geom_point(alpha= 0.5, shape = 21, color = 'black', stroke = 2) +
     {if(i != 4)scale_size(range = c(.1, 24))} +
     {if(i == 4)scale_size(range = c(.1, 12))} +
+    {if(i == 4)
+      geom_point(data = c_df, aes_string(x = 'tws', y = 'StressLog10', size = 'ramsar'),
+                 alpha = 0.5, shape = 21, color = "#029E97", stroke = 2) } +
     xlab('') + ylab('')+
     coord_cartesian(xlim = c(-22, 22), ylim = c(0, 2), expand = c(0, 0), clip = "off") +
     scale_y_continuous(breaks = seq(0, 2, 1), 
@@ -209,13 +215,20 @@ for (i in 1:length(pltdims)) {
          dpi = 500, width = 6, height = 4, units = "in")
 }
 
-# Calculate dimension sums for quadrant summaries ----
+# Calculate summary statistics ----
 
 # Population 
-StressDry(c_df, 'popE', 1e9)
-UnstressDry(c_df, 'popE', 1e9)
-StressWet(c_df, 'popE', 1e9)
-UnstressWet(c_df, 'popE', 1e9)
+sum(pop[strscomb == 0], na.rm =T)/1e9
+sum(pop[strscomb == 10 | strscomb == 20], na.rm =T)/1e9
+
+sum(pop[strscomb == 2], na.rm =T)/1e9
+sum(pop[strscomb == 12 | strscomb == 22], na.rm =T)/1e9
+
+# Verify with custom functions 
+StressDry(c_df, 'popE', 1e9) #y
+UnstressDry(c_df, 'popE', 1e9) #y
+StressWet(c_df, 'popE', 1e9) #y
+UnstressWet(c_df, 'popE', 1e9) #y
 
 # Crop calories
 StressDry(c_df, 'calE', 1e15)
@@ -236,17 +249,22 @@ StressWet(c_df, 'ramsar', 1)
 UnstressWet(c_df, 'ramsar', 1)
 
 # Amphibian species richness 
-c_df %>% filter(tws < -3 & fwstrs > 0.1) %>% 
-  pull(amph) %>% mean(na.rm = T) %>% round(2)
+amphsr[is.na(strscomb)] <- NA
+temp_sr <- amphsr
+temp_sr[strscomb != 0] <- NA
+weighted.mean(x = temp_sr, w = WGS84_areaRaster(0.5), na.rm = T)
 
-c_df %>% filter(tws < -3 & fwstrs <= 0.1) %>% 
-  pull(amph) %>% mean(na.rm = T) %>%round(2)
+temp_sr <- amphsr
+temp_sr[strscomb != 10 & strscomb != 20] <- NA
+weighted.mean(x = temp_sr, w = WGS84_areaRaster(0.5), na.rm = T)
 
-c_df %>% filter(tws > 3 & fwstrs > 0.1) %>% 
-  pull(amph) %>% mean(na.rm = T) %>% round(2)
+temp_sr <- amphsr
+temp_sr[strscomb != 2] <- NA
+weighted.mean(x = temp_sr, w = WGS84_areaRaster(0.5), na.rm = T)
 
-c_df %>% filter(tws > 3 & fwstrs <= 0.1) %>% 
-  pull(amph) %>% mean(na.rm = T) %>% round(2)
+temp_sr <- amphsr
+temp_sr[strscomb != 12 & strscomb != 22] <- NA
+weighted.mean(x = temp_sr, w = WGS84_areaRaster(0.5), na.rm = T)
 
 # Basin counts
 c_df %>% filter(tws < -3 & fwstrs >= 0.4) %>% nrow()
