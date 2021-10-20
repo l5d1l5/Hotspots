@@ -1,6 +1,6 @@
 ## Hotspots of social and ecological impacts from freshwater stress and storage loss
 
-<img src="https://raw.githubusercontent.com/XanderHuggins/Hotspots/master/assets/thumbnail.png" width=75% height=75%>
+<img src="https://raw.githubusercontent.com/XanderHuggins/Hotspots/master/assets/thumbnail.png" width=60% height=60%>
 
 *The associated manuscript is currently in revision at Nature Communications.* <br/>
 
